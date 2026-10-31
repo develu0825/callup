@@ -66,7 +66,7 @@ $$('.seg[data-diff-for] button').forEach(b=>b.addEventListener('click', e=>{
   seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
   sel.diff[sc]=b.dataset.diff;
 }));
-$$('.tab').forEach(t=>t.addEventListener('click',()=>{ show(t.dataset.tab); if(t.dataset.tab==='v-growth') renderGrowth(); }));
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{ show(t.dataset.tab); if(t.dataset.tab==='v-growth') renderGrowth(); if(t.dataset.tab==='v-profile') renderProfile(); }));
 
 $('#go-precall').addEventListener('click',()=>{
   const d = sel.diff[sel.sc];
@@ -235,23 +235,36 @@ function score(c){
       status: /(감사|고맙|안녕|들어가|확인|알겠|맞[죠나요])/.test(last)?'done':'part',
       ev: /(감사|고맙)/.test(last)?'감사 인사로 마무리함':'마무리 인사·재확인이 약했어요' },
   ];
-  const politeMatches = (all.match(/(감사|죄송|부탁|주시|주세요|세요|습니다|괜찮|실례)/g)||[]).length;
-  const avgLen = u.length? u.reduce((s,t)=>s+t.split(/\s+/).length,0)/u.length : 0;
-  const clamp=(n,a=30,b=97)=>Math.max(a,Math.min(b,Math.round(n)));
+  const turns = u.length;
+  const politeMatches = (all.match(/(감사|고맙|죄송|부탁|주시|주세요|세요|습니다|괜찮|실례|번거)/g)||[]).length;
+  const avgLen = turns? u.reduce((s,t)=>s+t.split(/\s+/).filter(Boolean).length,0)/turns : 0;
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,Math.round(n)));
   const doneCount = tasks.filter(t=>t.status==='done').length;
-  const scores = {
-    clarity: clamp(45 + u.length*6 + doneCount*8),
-    politeness: clamp(58 + politeMatches*6),
-    pace: clamp(avgLen>=4 && avgLen<=16 ? 82 : 66),
-    recovery: clamp(c.gentleBeat>=0 ? 62 : 85),
-  };
+  const partCount = tasks.filter(t=>t.status==='part').length;
+  const taskRatio = (doneCount + partCount*0.5)/4; // 0..1, 실제 과업 수행도
+  let scores;
+  if(turns===0){
+    scores = { clarity:18, politeness:22, pace:18, recovery:28 }; // 말이 거의 없던 통화
+  } else {
+    scores = {
+      clarity:    clamp(22 + taskRatio*58 + Math.min(turns,4)*4, 18, 98),
+      politeness: clamp(42 + politeMatches*8 + (turns>=2?6:0),   22, 98),
+      pace:       clamp(avgLen>=3 && avgLen<=18 ? 68 + Math.min(turns,4)*5 : (avgLen>0?52:28), 22, 95),
+      recovery:   clamp((c.gentleBeat>=0?52:78) + Math.min(turns,3)*4,     22, 95),
+    };
+  }
   const overall = Math.round((scores.clarity+scores.politeness+scores.pace+scores.recovery)/4);
   const tips=[];
-  if(tasks[2].status!=='done') tips.push('일시를 정한 뒤 "대면인가요, 화상인가요?"를 꼭 물어보세요.');
+  if(turns===0) tips.push('마이크를 켜고 한 문장이라도 소리 내어 대답해보세요. 그게 첫걸음이에요.');
+  if(turns>0 && avgLen>0 && avgLen<3) tips.push('단답 대신 "네, 화요일 2시 괜찮습니다"처럼 문장으로 대답해보세요.');
   if(tasks[1].status!=='done') tips.push('"화요일 2시로 할게요"처럼 날짜·시간을 분명히 말해 확정하세요.');
+  if(tasks[2].status!=='done') tips.push('일시를 정한 뒤 "대면인가요, 화상인가요?"를 꼭 물어보세요.');
   if(tasks[3].status!=='done') tips.push('끝맺기 전 "그럼 화요일 2시 맞죠?"로 한 번 더 확인하면 완벽해요.');
   if(tips.length<2) tips.push('좋아요! 다음엔 조금 더 또박또박, 천천히 말해보면 완벽해요.');
-  const title = overall>=80? '첫마디부터 끝까지 잘 이어갔어요!' : overall>=60? '점점 좋아지고 있어요, 거의 다 왔어요!' : '괜찮아요, 한 번 더 하면 분명 늘어요!';
+  const title = turns===0 ? '이번엔 말이 거의 없었어요. 한 번 더 해볼까요?'
+    : overall>=80 ? '첫마디부터 끝까지 잘 이어갔어요!'
+    : overall>=58 ? '점점 좋아지고 있어요, 거의 다 왔어요!'
+    : '괜찮아요, 한 번 더 하면 분명 늘어요!';
   return { tasks, scores, overall, tips:tips.slice(0,3), title };
 }
 
@@ -319,5 +332,26 @@ function renderGrowth(){
 function daysAgo(t){ const d=Math.floor((Date.now()-t)/864e5); return d<=0?'오늘':d===1?'어제':d+'일 전'; }
 function escapeHtml(s){ return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+/* ---- profile ---- */
+function renderProfile(){
+  const a=store.get(); const total=a.length;
+  const avg = total? Math.round(a.reduce((s,x)=>s+x.score,0)/total) : 0;
+  const drop = total? Math.round(a.reduce((s,x)=>s+(x.burdenBefore-x.burdenAfter),0)/total) : 0;
+  $('#p-total').textContent=total;
+  $('#p-avg').textContent= total? avg : '—';
+  $('#p-drop').textContent= total? (drop>0?('▼'+drop):'0') : '—';
+  const prog=Math.min(100, Math.round(total/20*100));
+  $('#p-prog').style.width=prog+'%';
+  $('#p-proglabel').textContent = total>=20? '콜포비아 졸업! 🎉' : `목표 20회 중 ${total}회`;
+  const lv = total>=15?3: total>=7?2: 1;
+  $('#p-level').textContent = total>=20? '콜포비아 극복 완료 · Lv.MAX' : `콜포비아 극복 중 · Lv.${lv}`;
+}
+$('#p-clear').addEventListener('click',()=>{
+  if(confirm('연습 기록을 모두 삭제할까요? 되돌릴 수 없어요.')){
+    localStorage.removeItem('callup_sessions'); renderProfile(); renderGrowth();
+  }
+});
+
 /* init */
 renderGrowth();
+renderProfile();
