@@ -1,0 +1,7 @@
+{
+  "name": "callup",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CallUp - AI 리크루터 전화 연습 (취준생 콜포비아 극복)"
+}

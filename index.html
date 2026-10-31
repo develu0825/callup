@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>CallUp · 콜업 — 면접 전화 연습</title>
+<style>
+  :root{
+    --bg:#E9EBFA; --bg2:#F5F4FD; --card:#FFFFFF; --card2:#F7F7FE;
+    --ink:#2B2A4C; --muted:#8C89AD; --faint:#B7B4D0; --line:#ECEBF7;
+    --indigo:#6E6CF0; --indigo2:#9B8CFB; --blue:#5B7CF7; --indigo-soft:#EDEBFE;
+    --mint:#44CDB9; --mint2:#6FDCC9; --mint-soft:#E2F8F3;
+    --amber:#F5B13C; --red:#FF7A7A; --red-soft:#FFE9E9;
+    --fs:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Segoe UI','Malgun Gothic',sans-serif;
+    --num:ui-rounded,'SF Pro Rounded',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--fs);color:var(--ink);
+    background:radial-gradient(800px 440px at 85% -6%,#DAD9FA 0%,rgba(218,217,250,0) 60%),
+      radial-gradient(680px 400px at 6% 2%,#E0F4F0 0%,rgba(224,244,240,0) 55%),
+      linear-gradient(180deg,var(--bg2),var(--bg));
+    display:flex;align-items:center;justify-content:center;min-height:100%;padding:16px}
+  .device{width:100%;max-width:412px;height:min(844px,96vh);background:var(--bg2);border-radius:38px;
+    box-shadow:0 30px 70px -24px rgba(76,76,160,.5),0 0 0 1px rgba(110,108,240,.08);
+    position:relative;overflow:hidden;display:flex;flex-direction:column}
+  @media(max-width:460px){body{padding:0}.device{height:100vh;max-width:none;border-radius:0}}
+
+  .view{flex:1;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .view.on{display:flex}
+  .body{flex:1;padding:18px 18px 12px;display:flex;flex-direction:column;gap:14px}
+  .tabs{display:flex;justify-content:space-around;align-items:center;padding:10px 10px 16px;background:#fff;border-top:1px solid var(--line)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--faint);font-weight:700;cursor:pointer;background:none;border:none;font-family:inherit}
+  .tab svg{width:21px;height:21px}
+  .tab.on{color:var(--indigo)}
+
+  .hi{font-size:21px;font-weight:800;letter-spacing:-.01em;line-height:1.3}
+  .sub{font-size:12.5px;color:var(--muted)}
+  .mimg{display:block;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:26%;
+    box-shadow:0 10px 20px -8px rgba(76,76,160,.45);padding:7px}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--card2);color:var(--muted);border:1px solid var(--line)}
+  .chip.amber{background:#FDF0D8;color:#C98A1A;border-color:transparent}
+  .chip.indigo{background:var(--indigo-soft);color:var(--indigo);border-color:transparent}
+  .chip.mint{background:var(--mint-soft);color:#1f9e8c;border-color:transparent}
+  .flame{width:9px;height:9px;border-radius:50% 50% 50% 0;background:linear-gradient(145deg,var(--amber),#FF8B6B);transform:rotate(-45deg)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 10px 22px -16px rgba(76,76,160,.3)}
+  .card h4{font-size:16px;font-weight:800}
+  .card .desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .scard{cursor:pointer;transition:transform .12s,box-shadow .12s;border:1.5px solid var(--line)}
+  .scard.sel{border-color:var(--indigo);box-shadow:0 12px 24px -14px rgba(110,108,240,.5)}
+  .scard:active{transform:scale(.99)}
+
+  .seg{display:inline-flex;background:var(--card2);border-radius:999px;padding:3px;gap:2px;border:1px solid var(--line)}
+  .seg button{font-size:11.5px;font-weight:700;padding:6px 15px;border-radius:999px;color:var(--muted);border:none;background:none;cursor:pointer;font-family:inherit}
+  .seg button.on{background:linear-gradient(145deg,var(--indigo2),var(--indigo));color:#fff;box-shadow:0 5px 12px -3px rgba(110,108,240,.5)}
+  .seg.mint button.on{background:linear-gradient(145deg,var(--mint2),var(--mint))}
+
+  .cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:18px;font-size:16px;font-weight:800;color:#fff;border:none;cursor:pointer;font-family:inherit;
+    background:linear-gradient(145deg,var(--indigo2),var(--indigo));box-shadow:0 14px 26px -10px rgba(110,108,240,.65)}
+  .cta.mint{background:linear-gradient(145deg,var(--mint2),var(--mint));box-shadow:0 14px 26px -10px rgba(68,205,185,.6)}
+  .cta:disabled{opacity:.5}
+  .ghost{background:none;border:1.5px solid var(--line);color:var(--muted);box-shadow:none}
+  .locked{opacity:.7;display:flex;align-items:center;gap:10px;padding:13px 15px;border:1.5px dashed var(--faint);border-radius:18px;font-size:12.5px;color:var(--muted)}
+
+  /* call */
+  .call{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 20px 22px;background:linear-gradient(180deg,#F5F4FD,#ECEBFA)}
+  .callbar{width:100%;display:flex;justify-content:space-between;align-items:center}
+  .rnd{width:36px;height:36px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 6px 14px -8px rgba(76,76,160,.5);border:none;cursor:pointer}
+  .rnd svg{width:17px;height:17px;color:var(--indigo)}
+  .blobwrap{position:relative;width:190px;height:190px;margin:22px 0 6px;display:grid;place-items:center}
+  .blob{position:absolute;width:168px;height:168px;background:linear-gradient(145deg,#A89CFB,#7B7CF6 45%,#63C9D6);
+    border-radius:42% 58% 55% 45%/48% 44% 56% 52%;box-shadow:0 20px 50px -12px rgba(110,108,240,.55);animation:morph 7s ease-in-out infinite}
+  .blob.b2{width:120px;height:120px;background:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,.05));filter:blur(2px);animation:morph 9s ease-in-out infinite reverse;box-shadow:none}
+  .speaking .blob{animation-duration:2.6s}
+  .callname{font-size:21px;font-weight:800;margin-top:12px}
+  .callrole{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .timer{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:15px;color:var(--indigo);margin-top:10px;font-weight:700;letter-spacing:.05em}
+  .caption{background:#fff;border-radius:18px 18px 18px 5px;padding:13px 15px;font-size:13px;line-height:1.5;color:var(--ink);margin-top:16px;text-align:left;box-shadow:0 10px 22px -14px rgba(76,76,160,.4);min-height:48px;width:100%}
+  .caption b{color:var(--indigo);font-weight:800;font-size:10px;letter-spacing:.05em;display:block;margin-bottom:3px}
+  .youline{font-size:12px;color:var(--muted);margin-top:10px;min-height:18px;width:100%;text-align:left}
+  .youline span{color:var(--indigo);font-weight:600}
+  .controls{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:auto;padding-top:14px}
+  .ctrl{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 8px 18px -10px rgba(76,76,160,.55);border:none;cursor:pointer}
+  .ctrl svg{width:23px;height:23px;color:var(--muted)}
+  .ctrl.active svg{color:var(--indigo)}
+  .mic{width:76px;height:76px;background:linear-gradient(145deg,var(--indigo2),var(--indigo));position:relative;box-shadow:0 12px 26px -8px rgba(110,108,240,.7)}
+  .mic svg{width:31px;height:31px;color:#fff}
+  .mic .ring{position:absolute;inset:-7px;border-radius:50%;border:2.5px solid var(--indigo2);opacity:0}
+  .mic.listening .ring{animation:rg 1.7s ease-out infinite}
+  .end{background:linear-gradient(145deg,#FF9E86,var(--red))}
+  .end svg{color:#fff}
+  .tin{display:flex;gap:8px;margin-top:12px;width:100%}
+  .tin input{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:13px;background:#fff}
+  .tin button{border:none;background:var(--indigo);color:#fff;border-radius:12px;padding:0 14px;font-weight:700;cursor:pointer}
+
+  /* precall */
+  .slider{width:100%;accent-color:var(--indigo);margin:10px 0}
+  .bignum{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;color:var(--indigo);text-align:center}
+
+  /* report */
+  .rhead{background:linear-gradient(150deg,var(--indigo),var(--blue));padding:22px 18px 44px;color:#fff;position:relative}
+  .rhead .k{font-size:11px;font-weight:800;opacity:.85}
+  .rhead .t{font-size:20px;font-weight:800;margin-top:6px;line-height:1.3;max-width:70%}
+  .rhead .mimg{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:64px}
+  .pull{margin:-30px 16px 0;position:relative;z-index:1}
+  .task{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .task:last-child{border-bottom:none}
+  .tmark{width:26px;height:26px;border-radius:9px;flex:none;display:grid;place-items:center}
+  .tmark svg{width:14px;height:14px}
+  .tmark.done{background:var(--mint-soft);color:var(--mint)}
+  .tmark.part{background:#FDF0D8;color:var(--amber)}
+  .tmark.chk{background:var(--red-soft);color:var(--red)}
+  .tmark.missing{background:var(--red-soft);color:var(--red)}
+  .task .tt{font-size:13px;font-weight:700}
+  .task .ev{font-size:10.5px;color:var(--faint);margin-top:2px;line-height:1.35}
+  .pill{font-size:10px;font-weight:800;margin-left:auto;flex:none;padding:4px 9px;border-radius:999px}
+  .pill.done{color:var(--mint);background:var(--mint-soft)}.pill.part{color:#C98A1A;background:#FDF0D8}.pill.chk,.pill.missing{color:var(--red);background:var(--red-soft)}
+  .meters{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+  .meter .ml{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+  .meter .ml b{font-family:var(--num);font-variant-numeric:tabular-nums}
+  .meter .ml span{color:var(--muted)}
+  .bar{height:7px;border-radius:5px;background:var(--indigo-soft);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--indigo),var(--indigo2))}
+  .bar.mint i{background:linear-gradient(90deg,var(--mint),var(--mint2))}
+  .burden{display:flex;align-items:center;justify-content:center;gap:16px;background:var(--mint-soft);border-radius:18px;padding:14px}
+  .burden .face{font-size:28px}
+  .burden .bn{font-family:var(--num);font-weight:800;font-size:13px;text-align:center;margin-top:2px}
+  .tip{display:flex;gap:9px;font-size:12px;color:#56547a;line-height:1.45;padding:3px 0}
+  .tip .d{width:6px;height:6px;border-radius:50%;background:var(--indigo);margin-top:6px;flex:none}
+
+  /* growth */
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 8px;text-align:center}
+  .stat b{display:block;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:22px;font-weight:800;color:var(--indigo)}
+  .stat span{font-size:10px;color:var(--muted)}
+  .rec{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .rec:last-child{border-bottom:none}
+  .rec .ri{width:34px;height:34px;border-radius:11px;background:var(--indigo-soft);display:grid;place-items:center;flex:none;color:var(--indigo)}
+  .rec .rn{font-size:12.5px;font-weight:700}.rec .rd{font-size:10px;color:var(--faint);margin-top:1px}
+  .rec .rs{margin-left:auto;font-family:var(--num);font-weight:800;font-size:14px}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 10px}
+
+  .note{font-size:11px;color:var(--faint);line-height:1.5}
+  @keyframes morph{0%,100%{border-radius:42% 58% 55% 45%/48% 44% 56% 52%}33%{border-radius:60% 40% 38% 62%/58% 55% 45% 42%}66%{border-radius:45% 55% 62% 38%/40% 52% 48% 60%}}
+  @keyframes rg{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.5);opacity:0}}
+  @media(prefers-reduced-motion:reduce){.blob,.mic .ring{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="device">
+
+  <!-- HOME -->
+  <section class="view on" id="v-home">
+    <div class="body">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="sub">오늘도 반가워요</div><div class="hi">지민님,<br>5분만 연습해요</div></div>
+        <img class="mimg" src="assets/m_hello_sq.png" alt="" style="width:62px">
+      </div>
+      <div style="display:flex;gap:7px">
+        <span class="chip amber"><span class="flame"></span> 연속 3일</span>
+        <span class="chip indigo" id="weekcount">이번 주 0통</span>
+      </div>
+      <div class="card scard sel" data-sc="A">
+        <h4>면접 일정 콜백</h4><div class="desc">리크루터가 면접 일정을 잡으려 전화해요</div>
+        <div class="seg" data-diff-for="A" style="margin-top:12px"><button class="on" data-diff="friendly">친절</button><button data-diff="pushy">재촉</button></div>
+      </div>
+      <div class="card scard" data-sc="B">
+        <h4>면접 일정 변경</h4><div class="desc">정중하게 일정을 바꿔 조율하는 연습</div>
+        <div class="seg mint" data-diff-for="B" style="margin-top:12px"><button class="on" data-diff="friendly">친절</button><button data-diff="pushy">재촉</button></div>
+      </div>
+      <div class="locked">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        일상·업무 전화 상황 곧 공개
+      </div>
+      <button class="cta" style="margin-top:auto" id="go-precall">연습 시작
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-tab="v-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.6 10.8a12 12 0 0 0 6.6 6.6l2-2a1.3 1.3 0 0 1 1.4-.3 9 9 0 0 0 3 .5A1.3 1.3 0 0 1 21 17v3a1.3 1.3 0 0 1-1.3 1.3A16.7 16.7 0 0 1 3 4.3 1.3 1.3 0 0 1 4.3 3h3A1.3 1.3 0 0 1 9 4.3a9 9 0 0 0 .5 3 1.3 1.3 0 0 1-.3 1.4l-2 2Z"/></svg>연습</button>
+      <button class="tab" data-tab="v-growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>기록</button>
+      <button class="tab" data-tab="v-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>프로필</button>
+    </nav>
+  </section>
+
+  <!-- PRECALL -->
+  <section class="view" id="v-precall">
+    <div class="body" style="gap:18px">
+      <button class="rnd" id="pc-back" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><div class="sub" id="pc-scn">면접 일정 콜백 · 친절</div><div class="hi">통화 전,<br>지금 얼마나 부담되나요?</div></div>
+      <div class="card">
+        <div class="bignum" id="pc-num">5</div>
+        <input class="slider" id="pc-slider" type="range" min="0" max="10" value="5">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>0 · 괜찮아요</span><span>10 · 많이 떨려요</span></div>
+      </div>
+      <div class="card" style="background:var(--indigo-soft);border:none">
+        <div class="note">🎙️ 마이크로 상대와 대화합니다. 시작하면 마이크 권한을 허용해 주세요. 음성은 저장하지 않고, 통화 기록만 남습니다. (Chrome/Edge 권장)</div>
+      </div>
+      <button class="cta" style="margin-top:auto" id="start-call">통화 시작</button>
+    </div>
+  </section>
+
+  <!-- CALL -->
+  <section class="view" id="v-call">
+    <div class="call" id="callbox">
+      <div class="callbar">
+        <button class="rnd" id="call-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span class="chip indigo" id="call-diff">친절 모드</span>
+      </div>
+      <div class="blobwrap"><div class="blob"></div><div class="blob b2"></div></div>
+      <div class="callname" id="call-name">OO기업 인사팀</div>
+      <div class="callrole" id="call-role">채용담당자 · 면접 일정 콜백</div>
+      <div class="timer" id="call-timer">00:00</div>
+      <div class="caption" id="caption"><b>상대방</b><span id="cap-text">연결 중…</span></div>
+      <div class="youline" id="youline"></div>
+      <div class="tin" id="textfallback" style="display:none">
+        <input id="tin-input" placeholder="말 대신 입력해도 돼요" autocomplete="off">
+        <button id="tin-send">전송</button>
+      </div>
+      <div class="controls">
+        <button class="ctrl" id="btn-mute" title="음소거"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5zM16 9a4 4 0 0 1 0 6"/></svg></button>
+        <button class="ctrl mic" id="btn-mic"><span class="ring"></span><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/></svg></button>
+        <button class="ctrl end" id="btn-end"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="transform:rotate(135deg)"><path d="M6.6 10.8a12 12 0 0 0 6.6 6.6l2-2a1.3 1.3 0 0 1 1.4-.3 9 9 0 0 0 3 .5A1.3 1.3 0 0 1 21 17v3a1.3 1.3 0 0 1-1.3 1.3A16.7 16.7 0 0 1 3 4.3 1.3 1.3 0 0 1 4.3 3h3A1.3 1.3 0 0 1 9 4.3a9 9 0 0 0 .5 3 1.3 1.3 0 0 1-.3 1.4l-2 2Z"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="view" id="v-report">
+    <div class="rhead">
+      <div class="k">통화 리포트</div>
+      <div class="t" id="rep-title">첫마디부터 끝까지 잘 이어갔어요!</div>
+      <img class="mimg" src="assets/m_celebrate_sq.png" alt="">
+    </div>
+    <div class="body" style="padding-top:0;gap:12px">
+      <div class="card pull" style="padding:6px 16px" id="rep-tasks"></div>
+      <div class="meters" id="rep-meters"></div>
+      <div class="burden">
+        <div><div class="face" id="bf-before">😣</div><div class="bn" id="bn-before" style="color:var(--muted)">연습 전 5</div></div>
+        <span style="color:var(--mint);font-weight:800">→</span>
+        <div><div class="face" id="bf-after">🙂</div><div class="bn" id="bn-after" style="color:var(--mint)">연습 후 2</div></div>
+      </div>
+      <div class="card" style="padding:12px 16px">
+        <div class="sub" style="margin-bottom:6px">연습 후 지금 부담감은?</div>
+        <input class="slider" id="after-slider" type="range" min="0" max="10" value="2">
+      </div>
+      <div id="rep-tips"></div>
+      <button class="cta mint" id="rep-again">같은 상황 다시 연습</button>
+      <button class="cta ghost" id="rep-home">홈으로</button>
+    </div>
+  </section>
+
+  <!-- GROWTH -->
+  <section class="view" id="v-growth">
+    <div class="body">
+      <div><div class="sub">나의 성장</div><div class="hi" style="font-size:19px">전화가 점점 편해져요</div></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="sub">통화 부담감 추이</span><span class="chip mint" id="g-drop">—</span></div>
+        <svg id="g-chart" viewBox="0 0 280 96" style="width:100%;height:96px;margin-top:8px" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="g-total">0</b><span>총 연습</span></div>
+        <div class="stat"><b id="g-streak">0</b><span>연속 일</span></div>
+        <div class="stat"><b id="g-avg">—</b><span>평균 점수</span></div>
+      </div>
+      <div class="card" style="padding:4px 16px" id="g-list"></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab" data-tab="v-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.6 10.8a12 12 0 0 0 6.6 6.6l2-2a1.3 1.3 0 0 1 1.4-.3 9 9 0 0 0 3 .5A1.3 1.3 0 0 1 21 17v3a1.3 1.3 0 0 1-1.3 1.3A16.7 16.7 0 0 1 3 4.3 1.3 1.3 0 0 1 4.3 3h3A1.3 1.3 0 0 1 9 4.3a9 9 0 0 0 .5 3 1.3 1.3 0 0 1-.3 1.4l-2 2Z"/></svg>연습</button>
+      <button class="tab on" data-tab="v-growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>기록</button>
+      <button class="tab" data-tab="v-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>프로필</button>
+    </nav>
+  </section>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
